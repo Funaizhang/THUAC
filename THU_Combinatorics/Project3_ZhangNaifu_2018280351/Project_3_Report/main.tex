@@ -1,0 +1,180 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lachaise Assignment
+% LaTeX Template
+% Version 1.0 (26/6/2018)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Marion Lachaise & François Févotte
+% Vel (vel@LaTeXTemplates.com)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lachaise Assignment
+% LaTeX Template
+% Version 1.0 (26/6/2018)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Marion Lachaise & François Févotte
+% Vel (vel@LaTeXTemplates.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+\usepackage{hyperref}
+\usepackage{amsmath}
+\newtheorem{hyp}{Hypothesis}
+\renewcommand{\thealgocf}{}
+
+\usepackage{float}
+\restylefloat{table}
+
+\usepackage{tikz}
+\usetikzlibrary{calc, intersections, arrows, shapes, positioning, fit, backgrounds}
+
+\usepackage{pgfplots}
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Project 3 Report: Finding Integer Partition Number} % Title of the assignment
+
+\author{Zhang Naifu\\ \texttt{znf18@mails.tsinghua.edu.cn}\\ \texttt{funaizhang@github}}% Author name and email address
+
+\date{Tsinghua University\\ \today} % University, school and/or department name(s) and a date
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION
+%----------------------------------------------------------------------------------------
+
+\section*{Abstract} % Unnumbered section
+
+Project 3 aims to compute the number of possible integer partitions for a natural number input by the user. This is the number of distinct ways of representing \(n\) as a sum of natural numbers (with order irrelevant). The function to generate such integer partition numbers is called the partition function, denoted by \(p(n)\). 
+
+\textit{calc\_partition\_number(n)} in \textit{Project\_3.py} implements a version of Euler's recursive formula using his \textbf{pentagonal number theorem} and \textbf{dynamic programming} methods. Implementation details are discussed in Section 3. We find this is reasonably fast for integers less than \(10000\). Efficiency is discussed in Section 4.
+
+This project makes no attempt at enumerating each partition.
+
+The proofs of certain key mathematical theorems and statements go beyond the scope of the course, or the ability of the author, and they might thus be used without proof.
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+\section{Illustrative Examples}
+
+% Numbered question, with an optional title
+\begin{question}[\itshape]
+There are five partitions for natural number 4:\\
+\(4\)\\
+\(3+1\)\\
+\(2+2\)\\
+\(2+1+1\)\\
+\(1+1+1+1\)
+\end{question}
+% Numbered question, with an optional title
+\begin{question}[\itshape]
+By convention \(p(0)=1\), \(p(n)=0\) for negative \(n\).
+\end{question}
+
+%----------------------------------------------------------------------------------------
+%	SECTION 2
+%----------------------------------------------------------------------------------------
+
+\section{Brute Force Enumeration} % Numbered section
+
+An obvious way is to enumerate all the partitions of \(n\). This could be made memory efficient, but is clearly extremely asymptotically time inefficient.
+
+The partition number for large \(n\) is approximated by the Hardy-Ramanujan estimate:\\
+\[\lim_{n \to \infty} p(n) = \frac{1}{4n\sqrt{3}} \exp(\pi \sqrt{\frac{2n}{3}})\]
+
+In other words, the best we can do is not good enough,
+\[p(n) = \Omega (\exp(\alpha  \sqrt{n}))  \;\;\;\;\; \mathrm{where} \;  \alpha = \pi \sqrt{\frac{2}{3}}\]
+
+The \(n^{-1}\) term disappears from the above time complexity equation because each partition does not take \(\Theta(1)\) time to generate. Each component integer in a partition does - so each partition takes \(\Theta(n)\) time.
+
+
+%----------------------------------------------------------------------------------------
+%	SECTION 3
+%----------------------------------------------------------------------------------------
+
+\section{Recurrence}
+
+Instead of counting, we use Euler's recurrence relation to calculate \(p(n)\).
+
+To begin with, we know the generating function for \(p(n)\):
+\[G(x) =\sum_{n=0}^{\infty}p(n) x^{n}= (1+x+x^2+...)(1+x^2+x^4+...)(1+x^3+...)... = \prod_{n=1}^{\infty}\frac{1}{1-x^n}\]
+
+Applying Euler's pentagonal number theorem without proof, the denominator could be expressed recursively,
+\[\prod_{n=1}^{\infty}(1-x^n) = \sum_{k=-\infty}^{\infty} (-1)^k x^{3(k-1)/2} = 1+ \sum_{k=1}^{\infty} (-1)^k (x^{3(k-1)/2} + x^{3(k+1)/2})\]
+
+We can then derive the recurrence relation that corresponds to this generating function using the method taught in class. Omitting the full derivation steps, the resulting recurrence relation is:
+\[p(n) = \sum_{k=1}^{n} (-1)^{k+1}(p(n-\frac{3k(k-1)}{2}) + p(n-\frac{3k(k+1)}{2}))\]
+
+The last equation is implemented in \textit{calc\_partition\_number(n)}. With \(n=1000\), we have the following output after a couple of seconds. For \(n=10000\), the programme would run for minutes.
+% Command-line "screenshot"
+
+\begin{center}
+	\begin{minipage}{0.7\linewidth}
+    	\begin{commandline}
+			\begin{verbatim}
+		$ ./Project_3.py
+        
+Please enter a natural number: 1000
+p(1000) = 24061467864032622473692149727991      
+			\end{verbatim}
+		\end{commandline}
+	\end{minipage}
+\end{center}
+
+
+%----------------------------------------------------------------------------------------
+%	SECTION 3
+%----------------------------------------------------------------------------------------
+
+\section{Complexity}
+
+\textit{calc\_partition\_number(n)} contains two loops, one nested in the other. The inner loop over \(k\) implements the recursive formula, while the outer loop over \(n\) iterates over each natural number up to \(n\) for memoization. Therefore the time complexity with dynamic programming is, 
+\[p(n) = O(n^2)\]
+
+This compares favorably with enumeration time complexity of \(\Omega (\exp(\alpha  \sqrt{n})) \).
+
+
+
+
+
+Memoization takes up \(O(n)\) space - a small price to pay for the improvement in speed.
+
+Admittedly, there are more efficient solutions but these tend to trade off elegance and readability for efficiency. The author has on this occasion opted for more elegance code with marginally worse efficiency.
+
+%----------------------------------------------------------------------------------------
+%	References
+%----------------------------------------------------------------------------------------
+\section*{References} % Unnumbered section
+
+Wikipedia \textit{https://en.wikipedia.org/wiki/Partition\_(number\_theory)}\\
+Wikipedia \textit{https://en.wikipedia.org/wiki/Pentagonal\_number\_theorem}\\
+H. Wilf. \textit{Lectures on Integer Partitions.} University of Pennsylvania. 2000. \textit{https://www.math.upenn.edu/~wilf/PIMS/PIMSLectures.pdf}
+
+%----------------------------------------------------------------------------------------
+
+\end{document}

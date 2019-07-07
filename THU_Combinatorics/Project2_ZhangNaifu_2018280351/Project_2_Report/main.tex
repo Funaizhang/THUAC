@@ -1,0 +1,208 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lachaise Assignment
+% LaTeX Template
+% Version 1.0 (26/6/2018)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Marion Lachaise & François Févotte
+% Vel (vel@LaTeXTemplates.com)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lachaise Assignment
+% LaTeX Template
+% Version 1.0 (26/6/2018)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Marion Lachaise & François Févotte
+% Vel (vel@LaTeXTemplates.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+\usepackage{hyperref}
+\usepackage{amsmath}
+\newtheorem{hyp}{Hypothesis}
+\renewcommand{\thealgocf}{}
+
+\usepackage{float}
+\restylefloat{table}
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Project 2 Report: Generating Permutations} % Title of the assignment
+
+\author{Zhang Naifu\\ \texttt{znf18@mails.tsinghua.edu.cn}} % Author name and email address
+
+\date{9 October 2018} % University, school and/or department name(s) and a date
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%	INTRODUCTION
+%----------------------------------------------------------------------------------------
+
+\section*{Abstract} % Unnumbered section
+
+Project 2 looks to enumerate all permutations from \{1,2,...,\(n\)\} without loss or repetition, where \(n\) is a non-zero natural number input by the user. The Python program would also return the number of permutations, which is \(n!\)
+
+Permutations are generated using Heap's algorithm\footnotemark - not to be confused with heap sort - which is chosen for its efficiency and will be the focus of this report. 
+
+\footnotetext[1]{While checking Heap's algorithm implementation on Wikipedia, the author discovered a trivial bug, which the author promptly corrected as his very first Wikipedia edit. Details at \href{https://en.wikipedia.org/w/index.php?title=Heap\%27s_algorithm\&type=revision\&diff=863198026\&oldid=862142736}{\underline{Wikipedia logs}}.
+}
+
+
+%----------------------------------------------------------------------------------------
+%	SECTION 1
+%----------------------------------------------------------------------------------------
+
+\section{Implementation} % Numbered section
+
+Given \(n\) elements, Heap's algorithm constructs every permutation by swapping a single pair of elements in the set. The recursive version of the algorithm is reproduced below in pseudocode without comment for subsequent reference.
+
+\SetEndCharOfAlgoLine{}
+\begin{center}
+	\begin{minipage}{0.75\linewidth} % Adjust the minipage width to accomodate for the length of algorithm lines
+		\begin{algorithm}[H]
+			\KwIn{$(a, n)$, a list of elements and its length}  % Algorithm inputs
+			\KwResult{Every permutation of the $n$ elements without loss or repetition} % Algorithm outputs/results
+			\medskip
+    		\nl if this is the original permutation $a$: print($a$)\;
+    		\medskip
+    		\nl $i=0$\;
+    		\nl loop:\;
+            \Indp
+		        \nl if $n>2$:
+            		heaps\_recursive$(a,n-1)$\;
+		        \nl if $n<=i+1$:
+            		break\;
+        		\nl elif $n$ is odd:
+            		swap last element with $1st$ element\;
+				\nl else $n$ is even:
+            		swap last element with element $i$\;
+        		\nl print($a$)\;
+        		\nl $i+=1$
+
+			\caption{\texttt{heaps\_recursive}} % Algorithm name
+		\end{algorithm}
+	\end{minipage}
+\end{center}
+
+The algorithm works by enumerating all permutations of the first \(n-1\) elements, appending the \(n_{th}\) element at the end of each permutation \textit{(line 4)}. It then swaps the one of the \(n-1\) elements with the \(n_{th}\) element. Depending on whether \(n\) is odd or even, \textit{lines 6-7} decide which element to swap - this is the only trick of the algorithm.
+
+The algorithm does such swaps for a total of \(n-1\) times, each time recursively permutating the new set of \(n-1\) elements of course. The process could be  illustrated graphically as such.\\
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|c|c} 
+\cline{1-1}\cline{3-3}\cline{5-5}\cline{7-7}
+ \(1\)		& generate all		& .		& generate all		& \(m_0\)	& 		& .			& generate all	\\
+ .			& permutations		& \(n\)	& permutations		& .			& ...	& \(m_{n-2}\)	& permutations\\
+ .			& of the			& .		& of the			& .			& 		& .			& of the 	\\
+ \(n-1\)	& \(n-1\) elements	& .		& \(n-1\) elements		& .			& 		& .			& \(n-1\) elements\\
+\cline{1-1}\cline{3-3}\cline{5-5}\cline{7-7}
+\multicolumn{1}{c}{\(n\)} & \multicolumn{1}{c}{} & \multicolumn{1}{c}{\(m_0\)} & \multicolumn{1}{c}{} & \multicolumn{1}{c}{\(m_1\)} & \multicolumn{1}{c}{} & \multicolumn{1}{c}{\(m_{n-1}\)} &  
+\end{tabular}
+\end{table}
+
+With \(n=3\), we have the following output, including the original permutation.
+% Command-line "screenshot"
+
+\begin{center}
+	\begin{minipage}{0.7\linewidth}
+    	\begin{commandline}
+			\begin{verbatim}
+		$ ./Project_2.py
+
+		Please enter a positive integer: 3
+[1, 2, 3]     
+[2, 1, 3]     # swapped elements[0] & elements[1]
+[3, 1, 2]     # swapped elements[0] & elements[2]
+[1, 3, 2]     # swapped elements[0] & elements[1]
+[2, 3, 1]     # swapped elements[0] & elements[2]
+[3, 2, 1]     # swapped elements[0] & elements[1]        
+			\end{verbatim}
+		\end{commandline}
+	\end{minipage}
+\end{center}
+
+
+%----------------------------------------------------------------------------------------
+%	SECTION 2
+%----------------------------------------------------------------------------------------
+
+\section{Correctness}
+
+What's of real interest is that the non-intuitive Heap's algorithm produces the correct output. We can prove this by induction.\\
+
+% Hypothesis
+\textbf{Hypothesis}: Heap's enumerates all \(n!\) unique permutations of length \(n\) without loss or repetition.
+
+\textbf{Base case}: For \(n=2\), Heap's is trivially correct, and the set of all permutations is \{[1,2],[2,1]\}.
+
+\textbf{Assume}: Heap's correctly enumerates \(n!\) permutations for \(n\).
+
+\textbf{Prove}: Heap's correctly enumerates \((n+1)!\) permutations for \(n+1\).\\
+
+Given the assumed correctness of the \(n\) run, the \(n+1\) run is correct iff it permutates a different set of \(n\) elements each recursion, or equivalently, iff each swap places a different element at the \(n+1_{th}\) position. 
+
+For \(n=2\), this is easy. In the Sample Output above, permutation 3 and permutation 5 each places a different element at the \(3_{rd}\) position, due to the swapping mechanism in \textit{lines 6-7} of \textbf{Algorithm:} heaps\_recursive.
+
+However, extension of the proof to a general \(n\) turns out to be harder and messier. \href{https://webcms3.cse.unsw.edu.au/static/uploads/course/COMP9021/15s2/60daa1780a57bd34476ca8f941dc1cd75053842948dd0a658afc414624b52adf/Permutations.pdf}{\underline{Eric Martin}} provides a technically true but rather convoluted proof - not reproduced here - that involves going through a total of 13 steps for odd and even \(n\). This author fails to work out a shorter and more elegant proof after several days of agonizing. If such a proof exists, it is certainly not made accessible. 
+
+%----------------------------------------------------------------------------------------
+%	SECTION 3
+%----------------------------------------------------------------------------------------
+
+\section{Complexity}
+
+We examine the loop in \textit{lines 2-9} of \textbf{Algorithm:} heaps\_recursive. The loop is run \(n-1\) times, each time incurring the cost of the recursion \textit{(line 4)} and a constant cost from the swap and printing \textit{(lines 8-9)}. On the \(n_{th}\) loop, we do the recursion too, but break \textit{(line 5)} before incurring the constant cost. Therefore,
+
+\[T(n)=\sum\limits_{i=0}^{n-2} (T(n-1)+C)+T(n-1)\]
+Equivalently
+\[T(n)=\sum\limits_{i=1}^n \sum\limits_{i=1}^{n-1} ... \sum\limits_{i=1}^{3} (T(2)+C)-C\]
+Since
+\[T(2)=C\]
+Then
+\[T(n)=C(n!-1)\]
+\\
+The main loop actually enumerates \(n!-1\) permutations. \textit{Line 1} of \textbf{Algorithm:} heaps\_recursive prints out the additional original permutation.
+
+As expected, Heap's is asymptotically efficient, as it's not possible to enumerate \(n!\) permutations in less than \(O(n!)\).
+
+Although similar to Steinhaus-Johnson-Trotter algorithm, Heap’s algorithm is more memory efficient as it does not keep track of the offset used in SJT.
+
+Heap's algorithm is also compared with the implementation of \href{https://docs.python.org/3.5/library/itertools.html#itertools.permutations}{\textit{\underline{itertools.permutations()}}} in Python (i.e. not the library in C). Both produce comparable runtimes.
+
+%----------------------------------------------------------------------------------------
+%	References
+%----------------------------------------------------------------------------------------
+\section*{References} % Unnumbered section
+
+Wikipedia \textit{https://en.wikipedia.org/wiki/Heap's\_algorithm}\\
+B.R. Heap (1963) \textit{Permutation by Interchanges.} The Computer Journal.\\
+E. Martin (2015) \textit{Notes on Cryptarithm Solver and Permutations.}\\
+Python itertools documentation \textit{https://docs.python.org/3.5/library/itertools.html\#itertools.permutations}
+
+%----------------------------------------------------------------------------------------
+
+\end{document}
