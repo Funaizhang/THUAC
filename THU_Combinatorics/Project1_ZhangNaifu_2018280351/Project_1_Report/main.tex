@@ -1,0 +1,137 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Lachaise Assignment
+% LaTeX Template
+% Version 1.0 (26/6/2018)
+%
+% This template originates from:
+% http://www.LaTeXTemplates.com
+%
+% Authors:
+% Marion Lachaise & François Févotte
+% Vel (vel@LaTeXTemplates.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass{article}
+
+\input{structure.tex} % Include the file specifying the document structure and custom commands
+
+%----------------------------------------------------------------------------------------
+%	ASSIGNMENT INFORMATION
+%----------------------------------------------------------------------------------------
+
+\title{Project 1 Report: Cellphone Passcodes} % Title of the assignment
+
+\author{Zhang Naifu\\ \texttt{znf18@mails.tsinghua.edu.cn}} % Author name and email address
+
+\date{7 October 2018} % University, school and/or department name(s) and a date
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle % Print the title
+
+%----------------------------------------------------------------------------------------
+%	Part 1
+%----------------------------------------------------------------------------------------
+
+\section{Results Summary} % Numbered section
+
+We assume iPhone unlock consists of 4 keys with repetition from \{0,...,9\}, and that Android unlock screen is a 3x3 grid.
+
+There are trivially 10\textsuperscript{4} = \textbf{10000} permutations for the iPhone unlock sequence.
+The python script outputs \textbf{389112} permutations for the Android unlock sequence.
+Assuming that the iPhone and Android users use all possible permutations of the unlock sequence with uniform probability, \textbf{Android is more secure}.
+
+
+%----------------------------------------------------------------------------------------
+%	Part 2
+%----------------------------------------------------------------------------------------
+
+\section{Implementation} % Numbered section
+
+The python script is made up of 3 functions, \textit{isValid()}, \textit{bruteForce()} and \textit{semiBruteForce()}. 
+\textit{isValid()} is used as a helper function in \textit{bruteForce()} and \textit{semiBruteForce()} to check for validity. \textit{semiBruteForce()} is a faster and more efficient version of \textit{bruteForce()} to enumerate permutations.
+
+\subsection{Checking Validity} % Numbered subsection
+
+Given a sequence, \textit{isValid()} returns \textit{True} if sequence is valid. Such a sequence must necessarily contain:
+	\begin{enumerate} 
+		\itemsep-0.3em 
+		\item No repetition of any digits and
+		\item No jumps (e.g. from 1 to 3) or 
+		\item If there’s any jump, the jumped number in the middle must have appeared in the sequence before the jump
+	\end{enumerate}
+    
+\subsection{Brute Force Enumeration} % Numbered subsection
+
+\textit{bruteForce()} generates all possible permutations of length \textit{n}, including the invalid ones, before passing each through the \textit{isValid()} function. It gives a final count of the valid sequences.
+
+To tally the total number of unlock sequences, \textit{bruteForce()} has to be called 6 times for \textit{n} = \{4,5,6,7,8,9\}, and takes \textasciitilde9 seconds. This was stretching my patience. 
+
+\subsection{Exploiting Symmetries} % Numbered subsection
+\textit{semiBruteForce()} implements some shortcuts.
+	\begin{enumerate} 
+	\itemsep-0.3em 
+		\item The number of valid sequences starting from 1 is the same as that starting from any corner \{1,3,7,9\}; instead of generating all permutations of length \textit{n}, \textit{semiBruteForce()} only considers those starting with 1, and count every such valid unlock sequence 4 times. By the same token, this is true of the set \{2,4,6,8\} as well
+		\item \textit{semiBruteForce(8)} = \textit{semiBruteForce(9)} for obvious reason
+	\end{enumerate}
+
+%----------------------------------------------------------------------------------------
+%	Part 3
+%----------------------------------------------------------------------------------------
+
+\section{Complexity} % Numbered section
+
+The \textbf{time complexity} of \textit{isValid()} depends on \textit{str.count()} and \textit{str.find()}. 
+\textit{str.count()} implements fastsearch and is therefore \textit{O(n)}. 
+\textit{str.find()} implements a mix between Boyer-More and Horspool, which is \textit{O(n)} on average. 
+
+\textit{bruteForce()} calls on \textit{itertools.permutations()} with \textit{O(n!)} once, and \textit{isValid() n!} times. Abusing the notation a little, the total running time from length 4 to 9 is
+\[\sum\limits_{n=4}^9 O(n!)+n!O(n)\]
+
+\textit{semiBruteForce()}  calls on \textit{itertools.permutations()} once and only calls on \textit{isValid()} for a subset of the permutations. The total running time is
+\[\sum\limits_{n=4}^8 O(n!)+3(n-1)!O(n)\]
+
+The last term in each equation asymptotically dominates. Although both have the same asymptotic efficiency, \textit{semiBruteForce()} is faster by a factor of \textasciitilde3 in practice, as it only considers permutations starting with \{1,2,5\} and we omit \textit{semiBruteForce(9)}. Refer to sample output below.
+
+For the same reason, \textit{semiBruteForce()} is better in terms of \textbf{space complexity} by a factor of \textasciitilde3. 
+
+%----------------------------------------------------------------------------------------
+% Sample output "screenshot"
+\begin{commandline}
+	\begin{verbatim}
+    
+		bruteForce:  
+		389112 different unlock sequences of length 4 to 9 
+		9.07 seconds taken 
+		semiBruteForce:  
+		389112 different unlock sequences of length 4 to 9 
+		2.57 seconds taken
+        
+	\end{verbatim}
+\end{commandline}
+%----------------------------------------------------------------------------------------
+
+\subsection{Efficiency Improvements} % Numbered subsection
+Further improvements could perhaps be made by considering only valid sequences of length \textit{n} when generating sequences of length \textit{n+1}, since no invalid sequence of length n would give valid sequence of length \textit{n+1}. \textbf{Dynamic programming} could also be used. But I’m happy with the 2.5 seconds \textit{semiBruteForce()} implementation so we stop here.
+
+%----------------------------------------------------------------------------------------
+%	References
+%----------------------------------------------------------------------------------------
+\section*{References} % Unnumbered section
+
+python string documentation \textit{https://github.com/python/cpython/tree/v3.6.5/Objects/stringlib}\\
+python itertools documentation \textit{https://docs.python.org/3.5/library/itertools.html\#itertools.permutations}
+
+\end{document}
+
+
