@@ -2,7 +2,9 @@
 //  Lab2a.cpp
 //  
 //  Created by Zhang Naifu 2018280351 on 23/05/2019.
-//  Reference acknowledgement: https://www.geeksforgeeks.org/
+//  Reference acknowledgement: 
+//  https://www.geeksforgeeks.org/find-paths-given-source-destination/
+//  https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/
 //
 /*
 A. 网络
@@ -64,13 +66,17 @@ A. 网络
 [可以先求出网络的最大生成树，并考虑生成树上的路径与答案的关系。]
 */
 
+#include <stdio.h> 
+#include <stdlib.h> 
 #include <math.h> 
 #include <iostream>
 #include <list>
+#include <limits.h> 
+#include <stdbool.h> 
 using namespace std;
 
-const int MAX = 1000000;
-int cost[5000][5000];
+const int MAX = 100000000;
+int graph[5000][5000];
 
 // a structure to represent a vertex in graph 
 struct Vertex {
@@ -82,76 +88,20 @@ struct Edge {
     int src, dest, weight; 
 }; 
   
-// A structure to represent a subset for union-find 
-struct subset { 
-    int parent; 
-    int rank; 
-}; 
-
-// a structure to represent a connected, undirected and weighted graph 
-struct Graph { 
-    // V-> Number of vertices, E-> Number of edges 
-    int V, E; 
-  
-    // graph is represented as an array of edges.  
-    // Since the graph is undirected, the edge 
-    // from src to dest is also edge from dest 
-    // to src. Both are counted as 1 edge here. 
-    struct Edge* edge; 
-}; 
-  
-// Creates a graph with V vertices and E edges 
-struct Graph* createGraph(int V, int E) { 
-    struct Graph* graph = new Graph; 
-    graph->V = V;
-    graph->E = E; 
-  
-    graph->edge = new Edge[E]; 
-  
-    return graph; 
+// A utility function to find the vertex with  
+// minimum key value, from the set of vertices  
+// not yet included in MST 
+int minKey(int key[], bool mstSet[], int n) { 
+    // Initialize min value 
+    int min = MAX, min_index; 
+    
+    for (int v = 0; v < n; v++) 
+        if (mstSet[v] == false && key[v] < min) 
+            min = key[v], min_index = v; 
+    
+    return min_index; 
 } 
   
-// A utility function to find set of an element i 
-// (uses path compression technique) 
-int find(struct subset subsets[], int i) { 
-    // find root and make root as parent of i  
-    // (path compression) 
-    if (subsets[i].parent != i) 
-        subsets[i].parent = find(subsets, subsets[i].parent); 
-  
-    return subsets[i].parent; 
-} 
-  
-// A function that does union of two sets of x and y 
-// (uses union by rank) 
-void Union(struct subset subsets[], int x, int y) { 
-    int xroot = find(subsets, x); 
-    int yroot = find(subsets, y); 
-  
-    // Attach smaller rank tree under root of high  
-    // rank tree (Union by Rank) 
-    if (subsets[xroot].rank < subsets[yroot].rank) 
-        subsets[xroot].parent = yroot; 
-    else if (subsets[xroot].rank > subsets[yroot].rank) 
-        subsets[yroot].parent = xroot; 
-  
-    // If ranks are same, then make one as root and  
-    // increment its rank by one 
-    else
-    { 
-        subsets[yroot].parent = xroot; 
-        subsets[xroot].rank++; 
-    } 
-} 
-  
-// Compare two edges according to their weights. 
-// Used in qsort() for sorting an array of edges 
-int myComp(const void* a, const void* b) { 
-    struct Edge* a1 = (struct Edge*)a; 
-    struct Edge* b1 = (struct Edge*)b; 
-    return a1->weight > b1->weight; 
-};
-
 int distance(struct Vertex vertex1, struct Vertex vertex2) {
     return pow(vertex1.x - vertex2.x, 2) + pow(vertex1.y - vertex2.y, 2);
 };  
@@ -163,20 +113,25 @@ class MST {
     int V; // No. of vertices in MST 
     list<int> *adj; // Pointer to an array containing adjacency lists 
 public: 
-    MST(int V)  { this->V = V; adj = new list<int>[V]; } // Constructor 
+    MST(int V); // Constructor 
     void addEdge(int u, int v); 
     void printAllPaths(int s, int d); 
     // A recursive function used by printAllPaths() 
     void printAllPathsUtil(int s, int d, bool visited[], int path[], int &path_index); 
 }; 
   
+MST::MST(int V) { 
+    this->V = V; 
+    adj = new list<int>[V]; 
+} 
+  
 void MST::addEdge(int u, int v) { 
     adj[u].push_back(v); // Add v to u’s list. 
     adj[v].push_back(u); // Add u to v’s list. 
 } 
   
-// Prints all paths from 's' to 't' 
-void MST::printAllPaths(int s, int t) { 
+// Prints all paths from 's' to 'd' 
+void MST::printAllPaths(int s, int d) { 
 
     // Mark all the vertices as not visited 
     bool *visited = new bool[V]; 
@@ -190,7 +145,7 @@ void MST::printAllPaths(int s, int t) {
         visited[i] = false; 
   
     // Call the recursive helper function to print all paths 
-    printAllPathsUtil(s, t, visited, path, path_index); 
+    printAllPathsUtil(s, d, visited, path, path_index); 
 } 
   
 // A recursive function to print all paths from 'u' to 'd'. 
@@ -209,9 +164,8 @@ void MST::printAllPathsUtil(int u, int d, bool visited[], int path[], int &path_
         int c_max = 0;
 
         for (int i = 0; i+1<path_index; i++) 
-            if (cost[path[i]][path[i+1]] > c_max)
-                c_max = cost[path[i]][path[i+1]];
-            // cout << path[i] << " ";
+            if (graph[path[i]][path[i+1]] > c_max)
+                c_max = graph[path[i]][path[i+1]];
         cout << c_max << endl; 
         return;
     } else { // If current vertex is not destination
@@ -229,63 +183,66 @@ void MST::printAllPathsUtil(int u, int d, bool visited[], int path[], int &path_
 
 
 
-// The main function to construct MST using Kruskal's algorithm 
-void kruskal(struct Graph* graph, int q, int start[], int end[]) { 
-    int V = graph->V;  
-    struct Edge result[V];  // This will store the resultant MST 
-    int e = 0;  // An index variable, used for result[] 
-    int i = 0;  // An index variable, used for sorted edges 
+// Function to construct and print MST for  
+// a graph represented using adjacency matrix 'graph'
+void prim(int n, int q, int start[], int end[]) { 
+    // Array to store constructed MST 
+    int parent[n];  
+    // Key values used to pick minimum weight edge in cut 
+    int key[n];  
+    // To represent set of vertices not yet included in MST 
+    bool mstSet[n];  
+
     int s, t;
   
-    // Step 1:  Sort all the edges in non-decreasing  
-    // order of their weight. If we are not allowed to  
-    // change the given graph, we can create a copy of 
-    // array of edges 
-    qsort(graph->edge, graph->E, sizeof(graph->edge[0]), myComp); 
+    // Initialize all keys as MAX 
+    for (int i = 0; i < n; i++) 
+        key[i] = MAX, mstSet[i] = false; 
   
-    // Allocate memory for creating V ssubsets 
-    struct subset *subsets = (struct subset*) malloc( V * sizeof(struct subset)); 
+    // Always include first 1st vertex in MST. 
+    // Make key 0 so that this vertex is picked as first vertex. 
+    key[0] = 0;      
+    parent[0] = -1; // First node is always root of MST  
   
-    // Create V subsets with single elements 
-    for (int v = 0; v < V; ++v) { 
-        subsets[v].parent = v; 
-        subsets[v].rank = 0; 
+    // The MST will have n-1 vertices 
+    for (int count = 0; count < n-1; count++) { 
+        // Pick the minimum key vertex from the  
+        // set of vertices not yet included in MST 
+        int u = minKey(key, mstSet, n); 
+  
+        // Add the picked vertex to the MST Set 
+        mstSet[u] = true; 
+  
+        // Update key value and parent index of  
+        // the adjacent vertices of the picked vertex.  
+        // Consider only those vertices which are not  
+        // yet included in MST 
+        for (int v = 0; v < n; v++) 
+  
+        // graph[u][v] is non zero only for adjacent vertices of m 
+        // mstSet[v] is false for vertices not yet included in MST 
+        // Update the key only if graph[u][v] is smaller than key[v] 
+        if (graph[u][v] && mstSet[v] == false && graph[u][v] < key[v]) 
+            parent[v] = u, key[v] = graph[u][v]; 
     } 
-  
-    // Number of edges to be taken is equal to V-1 
-    while (e < V - 1) { 
-        // Step 2: Pick the smallest edge. And increment  
-        // the index for next iteration 
-        struct Edge next_edge = graph->edge[i++]; 
-  
-        int x = find(subsets, next_edge.src); 
-        int y = find(subsets, next_edge.dest); 
-  
-        // If including this edge does't cause cycle, 
-        // include it in result and increment the index  
-        // of result for next edge 
-        if (x != y) 
-        { 
-            result[e++] = next_edge;
-            Union(subsets, x, y);
-        } 
-        // Else discard the next_edge 
-    } 
-    
+
+    // // print the constructed MST 
+    // for (int i = 1; i < n; i++) 
+    //     printf("%d - %d \t%d \n", parent[i], i, graph[i][parent[i]]); 
+
     // build MST for search
-    MST g(V);
+    MST g(n);
     // printf("Following are the edges in the constructed MST\n"); 
-    for (i = 0; i < e; ++i) 
-        g.addEdge(result[i].src, result[i].dest);
-        // printf("%d -- %d == %d\n", result[i].src, result[i].dest, result[i].weight); 
+    for (int i = 1; i < n; ++i) {
+        g.addEdge(parent[i], i);
+        // cout << "MST edge (" << parent[i] << ", " << i << ")" << endl;
+    }
     
-    for (i=0; i<q; i++) {
+    for (int i=0; i<q; i++) {
         s = start[i];
         t = end[i]; 
         g.printAllPaths(s, t); 
     }
-    
-    return;
 } 
 
 
@@ -300,7 +257,7 @@ int main() {
     m = n * (n-1)/2;
 
     struct Vertex vertices[n];
-    struct Graph* graph = createGraph(n, m); 
+    // struct Graph* graph = createGraph(n, m); 
 
     // read vertices
     for (i=0; i<n; i++) {
@@ -315,7 +272,7 @@ int main() {
     int end[q];
 
     // read queries
-    for (i=0; i<n; i++) {
+    for (i=0; i<q; i++) {
         cin >> s >> t;
         start[i] = s-1;
         end[i] = t-1;
@@ -324,18 +281,13 @@ int main() {
     // add edges to kruskal complete graph
     for (i=0; i<n; i++) {
         for (j=i+1; j<n; j++) {
-            // add edges
-            graph->edge[p].src = i; 
-            graph->edge[p].dest = j; 
-            graph->edge[p].weight = distance(vertices[i], vertices[j]); 
             // construct the cost matrix
-            cost[i][j] = distance(vertices[i], vertices[j]);
-            cost[j][i] = distance(vertices[i], vertices[j]);
-            p++;
+            graph[i][j] = distance(vertices[i], vertices[j]);
+            graph[j][i] = distance(vertices[i], vertices[j]);
         }
     }
   
-    kruskal(graph, q, start, end); 
-  
+    prim(n, q, start, end);
+
     return 0; 
 } 

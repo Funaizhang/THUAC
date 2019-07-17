@@ -3,7 +3,7 @@
 //  
 //  Created by Zhang Naifu 2018280351 on 23/05/2019.
 //  Reference acknowledgement: 
-//  https://www.geeksforgeeks.org/
+//  https://www.geeksforgeeks.org/find-paths-given-source-destination/
 //  https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/
 //
 /*
@@ -42,11 +42,24 @@ A. 网络
 4 3
 1 4
 
+5
+3 2
+5 5
+1 6
+1 4
+6 9
+1 
+3 2
+
+
 样例输出
 1
 1
 2
 2
+
+13
+
 
 样例解释
 对于第1个询问，一条可能的路径是 1 → 2。
@@ -75,8 +88,18 @@ A. 网络
 #include <stdbool.h> 
 using namespace std;
 
+#ifndef NOMINMAX
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
+#endif
+#endif  /* NOMINMAX */
+
 const int MAX = 100000000;
 int graph[5000][5000];
+int capacity[5000][5000];
 
 // a structure to represent a vertex in graph 
 struct Vertex {
@@ -87,37 +110,38 @@ struct Vertex {
 struct Edge { 
     int src, dest, weight; 
 }; 
-  
-// A utility function to find the vertex with  
-// minimum key value, from the set of vertices  
-// not yet included in MST 
-int minKey(int key[], bool mstSet[], int n) { 
-    // Initialize min value 
-    int min = MAX, min_index; 
-    
-    for (int v = 0; v < n; v++) 
-        if (mstSet[v] == false && key[v] < min) 
-            min = key[v], min_index = v; 
-    
-    return min_index; 
-} 
-  
+
 int distance(struct Vertex vertex1, struct Vertex vertex2) {
     return pow(vertex1.x - vertex2.x, 2) + pow(vertex1.y - vertex2.y, 2);
-};  
+};
 
+// A utility function to find the vertex with min key, 
+// from the set of vertices not yet included in MST 
+int minKey(int key[], bool mstSet[], int V) {
+    // init vars
+    int minimum = MAX;
+    int min_idx = 0;
 
+    // vertex i has the smallest key so far
+    for (int i=0; i<V; i++) {
+        if (mstSet[i] == false && key[i] < minimum) {
+            minimum = key[i];
+            min_idx = i;
+        }
+    }
+    return min_idx;
+};
 
 // A directed MST using adjacency list representation 
 class MST { 
     int V; // No. of vertices in MST 
     list<int> *adj; // Pointer to an array containing adjacency lists 
-public: 
+public:
     MST(int V); // Constructor 
     void addEdge(int u, int v); 
-    void printAllPaths(int s, int d); 
-    // A recursive function used by printAllPaths() 
-    void printAllPathsUtil(int s, int d, bool visited[], int path[], int &path_index); 
+    void getCapacity(int s, int d); 
+    // A recursive function used by getCapacity() 
+    void getCapacityRecur(int s, int d, bool visited[], int path[], int &path_index); 
 }; 
   
 MST::MST(int V) { 
@@ -131,56 +155,97 @@ void MST::addEdge(int u, int v) {
 } 
   
 // Prints all paths from 's' to 'd' 
-void MST::printAllPaths(int s, int d) { 
+void MST::getCapacity(int s, int d) { 
+    // cout << "getCapacity: " << s << "-" << d << endl; 
 
     // Mark all the vertices as not visited 
     bool *visited = new bool[V]; 
   
-    // Create an array to store paths 
+    // Create an array to store paths and the cost along the path
     int *path = new int[V]; 
+    int *c_path = new int[V]; 
     int path_index = 0; // Initialize path[] as empty 
   
     // Initialize all vertices as not visited 
-    for (int i = 0; i < V; i++) 
+    for (int i = 0; i < V; i++) {
         visited[i] = false; 
-  
+    }
+
+    // cout << "Initial matrix" << endl;
+    // for (int i=0; i<5; i++) {
+    //     for (int j=0; j<5; j++)
+    //         cout << capacity[i][j] << "\t";
+    //     cout << endl;
+    // }
+
     // Call the recursive helper function to print all paths 
-    printAllPathsUtil(s, d, visited, path, path_index); 
+    getCapacityRecur(s, d, visited, path, path_index); 
+
+    // cout << "Final matrix" << endl;
+    // for (int i=0; i<5; i++) {
+    //     for (int j=0; j<5; j++)
+    //         cout << capacity[i][j] << "\t";
+    //     cout << endl;
+    // }
 } 
   
-// A recursive function to print all paths from 'u' to 'd'. 
+// A recursive function to print the path from 'u' to 'd' along the MST.
 // visited[] keeps track of vertices in current path. 
-// path[] stores actual vertices and path_index is current 
-// index in path[] 
-void MST::printAllPathsUtil(int u, int d, bool visited[], int path[], int &path_index) { 
+// path[] stores actual vertices and path_index is current index in path[].
+void MST::getCapacityRecur(int u, int d, bool visited[], int path[], int &path_index) { 
     // Mark the current node and store it in path[] 
     visited[u] = true; 
-    path[path_index] = u; 
+    path[path_index] = u;
+    // cout << "Path advanced: [" << path_index << "]: ";
+    // for (int i =0; i<= path_index; i++)
+    //     cout << path[i]+1 << " ";
+    // cout << endl;
+
     path_index++; 
   
-    // If current vertex is same as destination, then print current path[] 
-    if (u == d) { 
-        // keep track of lowest capacity
-        int c_max = 0;
+    // Recur for all the vertices adjacent to current vertex 
+    list<int>::iterator i; 
+    for (i = adj[u].begin(); i != adj[u].end(); ++i) {
+        cout << "TRY: " << u+1 << "-" << *i+1 << endl;
 
-        for (int i = 0; i+1<path_index; i++) 
-            if (graph[path[i]][path[i+1]] > c_max)
-                c_max = graph[path[i]][path[i+1]];
-        cout << c_max << endl; 
-        return;
-    } else { // If current vertex is not destination
-        // Recur for all the vertices adjacent to current vertex 
-        list<int>::iterator i; 
-        for (i = adj[u].begin(); i != adj[u].end(); ++i) 
-            if (!visited[*i]) 
-                printAllPathsUtil(*i, d, visited, path, path_index); 
-    } 
-  
+        if (!visited[*i]) {
+            if (capacity[*i][d] == -1) {
+                cout << "recurse: " << u+1 << "-" << *i+1 << "-" << d+1 << endl;
+                getCapacityRecur(*i, d, visited, path, path_index);
+            } else {
+                visited[*i] = visited[d] = true;
+                path[path_index] = *i;
+                path[path_index+1] = d;
+                
+                // update capacity matrix along the path, like dp memoization
+                for (int i = path_index-1; i>=0; i--) {
+                    capacity[path[i]][d] = capacity[d][path[i]] = max(capacity[path[i]][path[i+1]], capacity[path[i+1]][d]);
+                }
+
+                int c_max = 0;
+                cout << "Found path: " << path[0]+1;
+                for (int i = 0; i<path_index+1; i++) {
+                    cout << "-" << path[i+1]+1;
+                    if (capacity[path[i]][path[i+1]] > c_max)
+                        c_max = capacity[path[i]][path[i+1]];
+                }
+                cout << endl;
+                cout << "c_max: " << c_max << endl;
+
+                // cout << "Capacity matrix updated" << endl;
+                // for (int i=0; i<5; i++) {
+                //     for (int j=0; j<5; j++)
+                //         cout << capacity[i][j] << "\t";
+                //     cout << endl;
+                // }
+            }
+        }
+    }
+
     // Remove current vertex from path[] and mark it as unvisited 
     path_index--; 
-    visited[u] = false; 
+    visited[u] = false;
 } 
-
 
 
 // Function to construct and print MST for  
@@ -193,6 +258,7 @@ void prim(int n, int q, int start[], int end[]) {
     // To represent set of vertices not yet included in MST 
     bool mstSet[n];  
 
+    // Init s & t
     int s, t;
   
     // Initialize all keys as MAX 
@@ -226,29 +292,25 @@ void prim(int n, int q, int start[], int end[]) {
             parent[v] = u, key[v] = graph[u][v]; 
     } 
 
-    // // print the constructed MST 
-    // for (int i = 1; i < n; i++) 
-    //     printf("%d - %d \t%d \n", parent[i], i, graph[i][parent[i]]); 
-
     // build MST for search
     MST g(n);
-    // printf("Following are the edges in the constructed MST\n"); 
+
     for (int i = 1; i < n; ++i) {
         g.addEdge(parent[i], i);
-        // cout << "MST edge (" << parent[i] << ", " << i << ")" << endl;
+        capacity[parent[i]][i] = capacity[i][parent[i]] = graph[i][parent[i]];
+        // cout << "MST edge (" << parent[i]+1 << ", " << i+1 << ") weight=" << graph[i][parent[i]] << endl;
     }
-    
+
     for (int i=0; i<q; i++) {
         s = start[i];
         t = end[i]; 
-        g.printAllPaths(s, t); 
+        g.getCapacity(s, t); 
     }
 } 
 
 
-
 int main() { 
-    int n, m, p=0, q;
+    int n, m, p=0, q=0;
     int x, y, s, t;
     int h=0, i=0, j=0, k=0;
 
@@ -257,7 +319,6 @@ int main() {
     m = n * (n-1)/2;
 
     struct Vertex vertices[n];
-    // struct Graph* graph = createGraph(n, m); 
 
     // read vertices
     for (i=0; i<n; i++) {
@@ -270,20 +331,28 @@ int main() {
     cin >> q;
     int start[q];
     int end[q];
+    int wrong = 0;
 
     // read queries
     for (i=0; i<q; i++) {
         cin >> s >> t;
-        start[i] = s-1;
-        end[i] = t-1;
+        if (s<= n && t<=n) {
+            start[i] = s-1;
+            end[i] = t-1;
+        } else {
+            wrong++;
+        }
     }
+    q -= wrong;
 
-    // add edges to kruskal complete graph
+    // add edges to prim complete graph
     for (i=0; i<n; i++) {
+        capacity[i][i] = 0;
         for (j=i+1; j<n; j++) {
-            // construct the cost matrix
+            // Initialize the cost/capacity matrix
             graph[i][j] = distance(vertices[i], vertices[j]);
             graph[j][i] = distance(vertices[i], vertices[j]);
+            capacity[i][j] = capacity[j][i] = -1;
         }
     }
   
