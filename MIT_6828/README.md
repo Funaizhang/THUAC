@@ -1,6 +1,6 @@
 # 《操作系统》结课报告
 2018280351 Zhang Naifu 张乃夫
-[github: 
+[github: https://github.com/Funaizhang/THUAC/tree/master/MIT_6828](https://github.com/Funaizhang/THUAC/tree/master/MIT_6828)
 
 ## 灵感来源
 
@@ -25,9 +25,7 @@ gdb:
 ``` -->
 
 编译成功后，QEMU 仿真界面是这个样子的：
-![](qemu.png)
-
-<div style="page-break-after: always"></div>
+![](resources/qemu.png)
 
 
 ## 内核初始化
@@ -35,19 +33,13 @@ gdb:
 首先，我们要把内核加载到内存里。
 
 PC的物理地址空间的结构如下：
-
-<!-- ![](physical.png) -->
-
-<img src="physical.png" alt="drawing"/>
-<p></p>
+![](resources/physical.png)
 
 
 
 QEMU 初始化时会硬连线执行 `0x000ffff0` 地址的汇编指令，也就是 `Basic Input/Output System (BIOS)` 的程序。BIOS 会从硬盘中加载 boot loader 到 Base Memory 里的 `0x00007c00`。 然后Boot loader 将处理器从 `16-bit real mode` 切换到 `32-bit protected mode`，修改`CR0_PG`寄存器的值，使得1M以上的内存地址可以访问。接下来，boot loader从硬盘中读取内核到内存并跳转到内核入口地址 —— Extended Memory/RAM 里的 `0x00100000`。最后控制交给内核。
 
 还有值得一提的是，stack在用虚拟地址 `0xf0108000`～`0xf0110000`。
-
-<div style="page-break-after: always"></div>
 
 
 ## 内存管理
@@ -165,26 +157,18 @@ return;
 ```
 
 
-<div style="page-break-after: always"></div>
-
 ### 虚拟内存分配器 Virtual Page Management
 
 内存管理的第二部分是虚拟内存管理。这个实验要实现的是二级分页，使虚拟内存将内核以及用户软件利用的虚拟地址映射到物理内存地址。
 
 虚拟内存结构如下：
-
-<img src="virtual.png" alt="drawing" width="450"/>
-<p></p>
-
-<div style="page-break-after: always"></div>
-
+![](resources/virtual.png)
 
 如下图所示，实验采用 Page Directory 和 Page Table 两级页表。采用两级页表的原因是一级页表的空间利用率非常低，存在着大量的浪费。
 
 CPU接到Logical Address，经过分段机制转换成Linear Address，再经过分页机制转换成Physical Address。程序里面的所有地址，都是虚拟地址。程序里面是不会出现物理地址的，就算是物理地址，CPU也会把它当做虚拟地址，通过MMU转化为物理地址。当前阶段的JOS分段机制就是加一个偏移量，所以可以直接认为CPU得到的虚拟地址就是线性地址，只需要经过page translation就可以得到物理地址了。
 
-<img src="paging.png" alt="drawing"/>
-<p></p>
+![](resources/paging.png)
 
 图片来源 [[5]](https://blog.csdn.net/fang92/article/details/47320747)
 
@@ -307,18 +291,12 @@ boot_map_region(kern_pgdir, KERNBASE, (0xffffffff-KERNBASE), 0, PTE_W);
 ```
 
 
-<div style="page-break-after: always"></div>
-
 大功告成，通过 MIT 给的测试。
 
-<img src="grade.png" alt="drawing"/>
-<p></p>
+![](resources/grade.png)
 
 此时，打开 QEMU 模拟CPU，可以看到内存设置成功。`kerninfo` 把虚拟地址与对应的物理地址列出来了。
-<img src="qemu2.png" alt="drawing"/>
-<p></p>
-
-<div style="page-break-after: always"></div>
+![](resources/qemu2.png)
 
 
 ## 遇到的问题
@@ -335,6 +313,7 @@ boot_map_region(kern_pgdir, KERNBASE, (0xffffffff-KERNBASE), 0, PTE_W);
 
 最后，借用《自己动手写CPU》中的一句话：学无止境，科技发展亦日新月异，唯有持续钻研，从根本上理解世界之运行，方能大成。
 
+详细代码请见 [github: https://github.com/Funaizhang/THUAC/tree/master/MIT_6828](https://github.com/Funaizhang/THUAC/tree/master/MIT_6828)
 
 ## 参考
 * [1] [MIT 6.828 2018](https://pdos.csail.mit.edu/6.828/2018/index.html)
