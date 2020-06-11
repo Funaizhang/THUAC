@@ -1,0 +1,16 @@
+diff --git a/GNUmakefile b/GNUmakefile
+index 7bd9e14..eea6406 100644
+--- a/GNUmakefile
++++ b/GNUmakefile
+@@ -33,8 +33,8 @@ TOP = .
+ 
+ # try to infer the correct GCCPREFIX
+ ifndef GCCPREFIX
+-GCCPREFIX := $(shell if i386-jos-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/dev/null 2>&1; \
+-   then echo 'i386-jos-elf-'; \
++GCCPREFIX := $(shell if i386-elf-objdump -i 2>&1 | grep '^elf32-i386$$' >/dev/null 2>&1; \
++   then echo 'i386-elf-'; \
+    elif objdump -i 2>&1 | grep 'elf32-i386' >/dev/null 2>&1; \
+    then echo ''; \
+    else echo "***" 1>&2; \
+
